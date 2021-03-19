@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net5.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ApplicationIcon>appicon.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\file.png" />
+    <None Remove="Resources\folder.png" />
+    <None Remove="Resources\ignored.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\file.png" />
+    <Resource Include="Resources\folder.png" />
+    <Resource Include="Resources\ignored.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="ViewModels\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Xaml.Behaviors.Wpf" Version="1.1.31" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ClocAnalyzerLibrary\ClocAnalyzerLibrary.csproj" />
+  </ItemGroup>
+
+</Project>

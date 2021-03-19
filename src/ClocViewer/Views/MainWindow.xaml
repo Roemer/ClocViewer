@@ -1,0 +1,163 @@
+﻿<Window x:Class="ClocViewer.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:Behaviors="http://schemas.microsoft.com/xaml/behaviors"
+        mc:Ignorable="d"
+        Title="Cloc Viewer" Height="600" Width="1000" ResizeMode="CanResizeWithGrip">
+    <DockPanel>
+        <Menu DockPanel.Dock="Top" FocusManager.IsFocusScope="False">
+            <MenuItem Header="_File">
+                <MenuItem Header="_Open Settings" Command="{Binding MenuOpenCommand}" />
+                <MenuItem Header="_Save Settings" Command="{Binding MenuSaveCommand}" />
+                <Separator />
+                <MenuItem Header="_Exit" Command="{Binding MenuExitCommand}" />
+            </MenuItem>
+        </Menu>
+        <StatusBar DockPanel.Dock="Bottom">
+            <StatusBarItem>
+                <Label>Selection</Label>
+            </StatusBarItem>
+            <StatusBarItem>
+                <Label Content="{Binding SelectionText}"></Label>
+            </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right">
+                <Button CommandParameter="{Binding SelectedItems, ElementName=ContentGrid}" Command="{Binding CopyCommand}">Copy Selection</Button>
+            </StatusBarItem>
+        </StatusBar>
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <GroupBox Grid.Row="0" Header="Settings">
+                <StackPanel Orientation="Vertical">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="100"/>
+                        </Grid.ColumnDefinitions>
+                        <Label Grid.Column="0" Grid.Row="0" Content="Source Path:"></Label>
+                        <TextBox Grid.Column="1" Grid.Row="0" Text="{Binding SourcePath}"></TextBox>
+                        <Button Grid.Column="2" Grid.Row="0" Content="Browse" Command="{Binding SourceBrowseCommand}"></Button>
+                    </Grid>
+                    <Expander Header="More Options">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="100"/>
+                            </Grid.ColumnDefinitions>
+                            <Label Grid.Column="0" Grid.Row="0" Content="Cloc Path:"></Label>
+                            <Label Grid.Column="0" Grid.Row="1" Content="OptionsFile Path:"></Label>
+                            <Label Grid.Column="0" Grid.Row="2" Content="IgnoredFile Path:"></Label>
+                            <TextBox Grid.Column="1" Grid.Row="0" Text="{Binding ClocPath}"></TextBox>
+                            <TextBox Grid.Column="1" Grid.Row="1" Text="{Binding OptionsFilePath}"></TextBox>
+                            <TextBox Grid.Column="1" Grid.Row="2" Text="{Binding IgnoredFilePath}"></TextBox>
+                            <Button Grid.Column="2" Grid.Row="0" Content="Browse" Command="{Binding ClocBrowseCommand}"></Button>
+                            <Button Grid.Column="2" Grid.Row="1" Content="Browse" Command="{Binding OptionsFileBrowseCommand}"></Button>
+                            <Button Grid.Column="2" Grid.Row="2" Content="Browse" Command="{Binding IgnoredFileBrowseCommand}"></Button>
+                        </Grid>
+                    </Expander>
+                    <Button Content="Analyze" Command="{Binding AnalyzeCommand}"></Button>
+                </StackPanel>
+            </GroupBox>
+            <GroupBox Grid.Row="1" Header="Analysis">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="100"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Label Grid.Column="0" Grid.Row="0" Content="Current Path:"></Label>
+                        <TextBox Grid.Column="1" Grid.Row="0" Text="{Binding CurrentPath}" IsReadOnly="True"></TextBox>
+                    </Grid>
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="4*"/>
+                            <ColumnDefinition Width="5" />
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+                        <GridSplitter Grid.Row="0" Grid.Column="1" Width="5" HorizontalAlignment="Stretch" />
+                        <GroupBox Grid.Row="0" Grid.Column="2" Header="Languages">
+                            <DataGrid ItemsSource="{Binding SelectedLanguages}"
+                                      AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" IsReadOnly="True" IsSynchronizedWithCurrentItem="True"
+                                      Focusable="True">
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Name" Binding="{Binding Language}"/>
+                                    <DataGridTextColumn Header="LineCount" Binding="{Binding LineCount, StringFormat={}{0:N0}}"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </GroupBox>
+                        <DataGrid Grid.Row="0" Grid.Column="0" ItemsSource="{Binding DisplayedEntry.Entries}"
+                                  AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" IsReadOnly="True" IsSynchronizedWithCurrentItem="True"
+                                  Focusable="True"
+                                  Name="ContentGrid">
+                            <Behaviors:Interaction.Triggers>
+                                <Behaviors:EventTrigger EventName="SelectionChanged">
+                                    <Behaviors:InvokeCommandAction
+                                        CommandParameter="{Binding SelectedItems, ElementName=ContentGrid}"
+                                        Command="{Binding SelectionChangedCommand}">
+                                    </Behaviors:InvokeCommandAction>
+                                </Behaviors:EventTrigger>
+                            </Behaviors:Interaction.Triggers>
+                            <DataGrid.Columns>
+                                <DataGridTemplateColumn Header="Icon" Width="10">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Image>
+                                                <Image.Style>
+                                                    <Style TargetType="{x:Type Image}">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsFolder}" Value="False">
+                                                                <Setter Property="Source" Value="Resources/file.png" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsFolder}" Value="True">
+                                                                <Setter Property="Source" Value="Resources/folder.png" />
+                                                            </DataTrigger>
+                                                            <DataTrigger Binding="{Binding IsIgnored}" Value="True">
+                                                                <Setter Property="Source" Value="Resources/ignored.png" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </Image.Style>
+                                            </Image>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTextColumn Header="Name" Binding="{Binding Name}"/>
+                                <DataGridTextColumn Header="FileCount" Binding="{Binding FileCount, StringFormat={}{0:N0}}"/>
+                                <DataGridTextColumn Header="FileType" Binding="{Binding FileType}"/>
+                                <DataGridTextColumn Header="CodeCount" Binding="{Binding CodeCount, StringFormat={}{0:N0}}"/>
+                                <DataGridTextColumn Header="CommentCount" Binding="{Binding CommentCount, StringFormat={}{0:N0}}"/>
+                                <DataGridTextColumn Header="BlankCount" Binding="{Binding BlankCount, StringFormat={}{0:N0}}"/>
+                                <DataGridTextColumn Header="IgnoreReason" Binding="{Binding IgnoreReason}"/>
+                            </DataGrid.Columns>
+                            <DataGrid.InputBindings>
+                                <MouseBinding
+                                    MouseAction="LeftDoubleClick"
+                                    Command="{Binding MouseDoubleClickCommand}"
+                                    CommandParameter="{Binding DisplayedEntry.Entries/}" />
+                                <KeyBinding
+                                    Key="Enter"
+                                    Command="{Binding MouseDoubleClickCommand}"
+                                    CommandParameter="{Binding DisplayedEntry.Entries/}" />
+                            </DataGrid.InputBindings>
+                        </DataGrid>
+                    </Grid>
+                </Grid>
+            </GroupBox>
+        </Grid>
+    </DockPanel>
+</Window>
