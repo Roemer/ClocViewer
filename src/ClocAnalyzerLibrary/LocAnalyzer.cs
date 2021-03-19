@@ -12,7 +12,23 @@ namespace ClocAnalyzerLibrary
         {
             var csvDelimiter = '|';
             var rootFolder = new LocFolder { Name = "Root", FullPath = settings.RootPath };
-            ExecuteCmd(settings.ClocExePath, settings.RootPath, $@"--csv --csv-delimiter={csvDelimiter} --config=""{settings.OptionsFile}"" --by-file --quiet --ignored=""{settings.IgnoredFile}"" ""{settings.RootPath}""", out var lines);
+            var arguments = new List<string>();
+            arguments.Add("--csv");
+            arguments.Add($"--csv-delimiter={csvDelimiter}");
+            arguments.Add("--by-file");
+            arguments.Add("--quiet");
+            bool hasOptionsFile = !string.IsNullOrWhiteSpace(settings.OptionsFile) && File.Exists(settings.OptionsFile);
+            if (hasOptionsFile)
+            {
+                arguments.Add($@"--config=""{settings.OptionsFile}""");
+            }
+            bool hasIgnoredFile = !string.IsNullOrWhiteSpace(settings.IgnoredFile);
+            if (hasIgnoredFile)
+            {
+                arguments.Add($@"--ignored=""{settings.IgnoredFile}""");
+            }
+            arguments.Add($@"""{settings.RootPath}""");
+            ExecuteCmd(settings.ClocExePath, settings.RootPath, string.Join(" ", arguments), out var lines);
             foreach (var line in lines[2..^1])
             {
                 var parts = line.Split(csvDelimiter);
@@ -45,20 +61,23 @@ namespace ClocAnalyzerLibrary
             }
 
             // Now parse the ignored files
-            var ignoredLines = File.ReadAllLines(settings.IgnoredFile);
-            foreach (var line in ignoredLines)
+            if (hasIgnoredFile)
             {
-                var linePrepared = Regex.Replace(line.Replace("/", "\\"), Regex.Escape(settings.RootPath), "", RegexOptions.IgnoreCase);
-                var parts = linePrepared.Split(',', 2);
-                var file = parts[0].Trim('\\', '/').ToLower(); //Hack: As some paths are lower and some correct in cloc, just do all lower for now
-                var reason = parts[1];
-                if (Directory.Exists(Path.Combine(settings.RootPath, file)))
+                var ignoredLines = File.ReadAllLines(settings.IgnoredFile);
+                foreach (var line in ignoredLines)
                 {
-                    // Skip directories
-                    continue;
+                    var linePrepared = Regex.Replace(line.Replace("/", "\\"), Regex.Escape(settings.RootPath), "", RegexOptions.IgnoreCase);
+                    var parts = linePrepared.Split(',', 2);
+                    var file = parts[0].Trim('\\', '/').ToLower(); //Hack: As some paths are lower and some correct in cloc, just do all lower for now
+                    var reason = parts[1];
+                    if (Directory.Exists(Path.Combine(settings.RootPath, file)))
+                    {
+                        // Skip directories
+                        continue;
+                    }
+                    var fileStats = new LocStats(reason);
+                    rootFolder.AddPath(file, fileStats);
                 }
-                var fileStats = new LocStats(reason);
-                rootFolder.AddPath(file, fileStats);
             }
 
             return rootFolder;
