@@ -121,13 +121,13 @@
                                                     <Style TargetType="{x:Type Image}">
                                                         <Style.Triggers>
                                                             <DataTrigger Binding="{Binding IsFolder}" Value="False">
-                                                                <Setter Property="Source" Value="Resources/file.png" />
+                                                                <Setter Property="Source" Value="/Resources/file.png" />
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding IsFolder}" Value="True">
-                                                                <Setter Property="Source" Value="Resources/folder.png" />
+                                                                <Setter Property="Source" Value="/Resources/folder.png" />
                                                             </DataTrigger>
                                                             <DataTrigger Binding="{Binding IsIgnored}" Value="True">
-                                                                <Setter Property="Source" Value="Resources/ignored.png" />
+                                                                <Setter Property="Source" Value="/Resources/ignored.png" />
                                                             </DataTrigger>
                                                         </Style.Triggers>
                                                     </Style>
