@@ -18,11 +18,11 @@ jobs:
       with:
         dotnet-version: 5.0.x
     - name: Restore dependencies
-      run: dotnet restore ${SLNPATH}
+      run: dotnet restore ${{ env.SLNPATH }}
     - name: Build
-      run: dotnet build --no-restore ${SLNPATH}
+      run: dotnet build --no-restore  ${{ env.SLNPATH }}
     - name: Publish
-      run: dotnet publish ${SLNPATH}
+      run: dotnet publish  ${{ env.SLNPATH }}
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
