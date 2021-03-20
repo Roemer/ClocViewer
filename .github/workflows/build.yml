@@ -7,7 +7,7 @@ on:
     branches: [ main ]
   workflow_dispatch:
     inputs:
-      create-release:
+      create_release:
         description: 'Create Release'
         required: true
         default: 'false'
@@ -28,6 +28,9 @@ jobs:
       uses: jasondavis303/net-sdk-proj-file-version@v1.0.1
       with:
         PROJ_FILE: ./src/ClocViewer/ClocViewer.csproj
+    - name: Show version
+      run: |
+        echo "Version: ${{ steps.get_version.outputs.ASSEMBLY_VERSION }}!"
     - name: Restore dependencies
       run: dotnet restore ${{ env.SLNPATH }}
     - name: Build
@@ -41,7 +44,7 @@ jobs:
         path: ./src/ClocViewer/bin/Debug/net5.0-windows/publish
         retention-days: 90
     - name: Create Release
-      if: ${{ github.event.inputs.create-release == 'yes' }}
+      if: github.event.inputs.create_release == 'true'
       run: |
-        echo "Hello ${{ github.event.inputs.create-release }} ${{ steps.get_version.outputs.ASSEMBLY_VERSION }}!"
+        echo "Hello ${{ github.event.inputs.create-release }}!"
     
