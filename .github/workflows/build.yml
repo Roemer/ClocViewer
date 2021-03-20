@@ -43,8 +43,23 @@ jobs:
         name: ClocViewer-${{github.sha}}
         path: ./src/ClocViewer/bin/Debug/net5.0-windows/publish
         retention-days: 90
+  release:
+    needs: build
+    runs-on: windows-latest
+    if: github.event.inputs.create_release == 'true'
+    steps:
     - name: Create Release
-      if: github.event.inputs.create_release == 'true'
       run: |
-        echo "Hello ${{ github.event.inputs.create-release }}!"
-    
+        echo "Creating release"
+    - name: Download Artifact
+      uses: actions/download-artifact@v2
+      with:
+        path: ./artifacts
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        draft: true
+        name: Release Test
+        
