@@ -5,6 +5,12 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      create-release:
+        description: 'Create Release'
+        required: true
+        default: 'false'
 
 jobs:
   build:
@@ -17,6 +23,11 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 5.0.x
+    - name: Get assembly version
+      id: get_version
+      uses: jasondavis303/net-sdk-proj-file-version@v1.0.1
+      with:
+        PROJ_FILE: ./src/ClocViewer/ClocViewer.csproj
     - name: Restore dependencies
       run: dotnet restore ${{ env.SLNPATH }}
     - name: Build
@@ -29,3 +40,8 @@ jobs:
         name: ClocViewer-${{github.sha}}
         path: ./src/ClocViewer/bin/Debug/net5.0-windows/publish
         retention-days: 90
+    - name: Create Release
+      if: ${{ github.event.inputs.create-release == 'yes' }}
+      run: |
+        echo "Hello ${{ github.event.inputs.create-release }} ${{ steps.get_version.outputs.ASSEMBLY_VERSION }}!"
+    
