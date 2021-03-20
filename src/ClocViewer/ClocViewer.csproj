@@ -6,6 +6,8 @@
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationIcon>appicon.ico</ApplicationIcon>
+    <Version>1.0.0</Version>
+    <Authors>Roemer</Authors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,10 +20,6 @@
     <Resource Include="Resources\file.png" />
     <Resource Include="Resources\folder.png" />
     <Resource Include="Resources\ignored.png" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="ViewModels\" />
   </ItemGroup>
 
   <ItemGroup>
