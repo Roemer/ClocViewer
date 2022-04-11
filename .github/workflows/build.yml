@@ -23,14 +23,6 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 5.0.x
-    - name: Get assembly version
-      id: get_version
-      uses: jasondavis303/net-sdk-proj-file-version@v1.0.1
-      with:
-        PROJ_FILE: ./src/ClocViewer/ClocViewer.csproj
-    - name: Show version
-      run: |
-        echo "Version: ${{ steps.get_version.outputs.ASSEMBLY_VERSION }}!"
     - name: Restore dependencies
       run: dotnet restore ${{ env.SLNPATH }}
     - name: Build
