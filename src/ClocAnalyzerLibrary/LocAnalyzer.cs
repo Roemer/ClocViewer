@@ -10,7 +10,7 @@ namespace ClocAnalyzerLibrary
     {
         public static LocFolder Analyze(LocAnalyzerSettings settings)
         {
-            var csvDelimiter = '|';
+            var csvDelimiter = ';';
             var rootFolder = new LocFolder { Name = "Root", FullPath = settings.RootPath };
             var arguments = new List<string>();
             arguments.Add("--csv");
