@@ -4,10 +4,15 @@ namespace ClocAnalyzerLibrary
 {
     public static class ExtensionMethods
     {
-        public static void IncrementBy<TKey>(this Dictionary<TKey, long> dictionary, TKey key, long valueToAdd)
+        public static void AddStatsToDict(Dictionary<string, LocStats> dictionary, LocStats stats)
         {
-            dictionary.TryGetValue(key, out var count);
-            dictionary[key] = count + valueToAdd;
+            var exists = dictionary.TryGetValue(stats.Type, out var dictStats);
+            if (!exists)
+            {
+                dictStats = new LocStats { Type = stats.Type };
+                dictionary.Add(stats.Type, dictStats);
+            }
+            dictStats.AddStats(stats);
         }
     }
 }

@@ -8,32 +8,43 @@ namespace ClocAnalyzerLibrary
 {
     public static class LocAnalyzer
     {
-        public static LocFolder Analyze(LocAnalyzerSettings settings)
+        public static FolderStats Analyze(LocAnalyzerSettings settings)
         {
             var csvDelimiter = ';';
-            var rootFolder = new LocFolder { Name = "Root", FullPath = settings.RootPath };
+            var rootFolder = new FolderStats { FullPath = settings.RootPath };
             var arguments = new List<string>();
             arguments.Add("--csv");
             arguments.Add($"--csv-delimiter={csvDelimiter}");
             arguments.Add("--by-file");
             arguments.Add("--quiet");
-            bool hasOptionsFile = !string.IsNullOrWhiteSpace(settings.OptionsFile) && File.Exists(settings.OptionsFile);
-            if (hasOptionsFile)
+            bool hasClocOptions = !string.IsNullOrWhiteSpace(settings.ClocOptions);
+            var optionsTempFile = Path.GetTempFileName();
+            if (hasClocOptions)
             {
-                arguments.Add($@"--config=""{settings.OptionsFile}""");
+                // Write the options to a temporary file and use it
+                File.WriteAllText(optionsTempFile, settings.ClocOptions);
+                arguments.Add($@"--config=""{optionsTempFile}""");
             }
-            bool hasIgnoredFile = !string.IsNullOrWhiteSpace(settings.IgnoredFile);
-            if (hasIgnoredFile)
-            {
-                arguments.Add($@"--ignored=""{settings.IgnoredFile}""");
-            }
+            // Create and use a temporary file for the ignored files list
+            var ignoredTempFile = Path.GetTempFileName();
+            arguments.Add($@"--ignored=""{ignoredTempFile}""");
+            // Add the root path to be analyzed
             arguments.Add($@"""{settings.RootPath}""");
-            ExecuteCmd(settings.ClocExePath, settings.RootPath, string.Join(" ", arguments), out var lines);
+            // Execute the external application
+            var exitCode = ExecuteCmd(settings.ClocExePath, settings.RootPath, string.Join(" ", arguments), out var lines);
+            if (exitCode != null && exitCode != 0)
+            {
+                throw new Exception($"cloc failed with exit code: {exitCode}");
+            }
+            // Handle the output
             foreach (var line in lines[2..^1])
             {
                 var parts = line.Split(csvDelimiter);
                 var type = parts[0];
-                var filePath = parts[1].ToLower(); //Hack: As some paths are lower and some correct in cloc, just do all lower for now
+                var filePath = parts[1];
+                var blank = parts[2];
+                var comment = parts[3];
+                var code = parts[4];
 
                 // Customized handling
                 if (filePath.EndsWith(".cs", StringComparison.InvariantCultureIgnoreCase))
@@ -52,32 +63,52 @@ namespace ClocAnalyzerLibrary
                     }
                 }
 
-                var blank = parts[2];
-                var comment = parts[3];
-                var code = parts[4];
-                var relPath = Path.GetRelativePath(settings.RootPath, filePath).ToLower();
-                var fileStats = new LocStats(type, Convert.ToInt64(blank), Convert.ToInt64(comment), Convert.ToInt64(code));
-                rootFolder.AddPath(relPath, fileStats);
+                // Create and add the stats
+                var fileStats = new FileStats(type, Convert.ToInt64(code), Convert.ToInt64(comment), Convert.ToInt64(blank))
+                {
+                    FullPath = filePath
+                };
+                rootFolder.AddFile(fileStats);
             }
 
-            // Now parse the ignored files
-            if (hasIgnoredFile)
+            // Now parse the ignored files            
+            if (File.Exists(ignoredTempFile))
             {
-                var ignoredLines = File.ReadAllLines(settings.IgnoredFile);
+                var ignoredLines = File.ReadAllLines(ignoredTempFile);
                 foreach (var line in ignoredLines)
                 {
+                    if (string.IsNullOrWhiteSpace(line))
+                    {
+                        // Empty entry
+                        continue;
+                    }
                     var linePrepared = Regex.Replace(line.Replace("/", "\\"), Regex.Escape(settings.RootPath), "", RegexOptions.IgnoreCase);
                     var parts = linePrepared.Split(',', 2);
-                    var file = parts[0].Trim('\\', '/').ToLower(); //Hack: As some paths are lower and some correct in cloc, just do all lower for now
+                    var filePath = parts[0].Trim('\\', '/');
+                    if (string.IsNullOrWhiteSpace(filePath))
+                    {
+                        // Root folder
+                        continue;
+                    }
                     var reason = parts[1];
-                    if (Directory.Exists(Path.Combine(settings.RootPath, file)))
+                    if (Directory.Exists(filePath))
                     {
                         // Skip directories
                         continue;
                     }
-                    var fileStats = new LocStats(reason);
-                    rootFolder.AddPath(file, fileStats);
+                    var fileStats = new FileStats(reason) { FullPath = filePath };
+                    rootFolder.AddFile(fileStats);
                 }
+            }
+
+            // Cleanup
+            if (File.Exists(optionsTempFile))
+            {
+                File.Delete(optionsTempFile);
+            }
+            if (File.Exists(ignoredTempFile))
+            {
+                File.Delete(ignoredTempFile);
             }
 
             return rootFolder;

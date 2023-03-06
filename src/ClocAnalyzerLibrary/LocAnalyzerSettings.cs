@@ -4,7 +4,6 @@
     {
         public string RootPath { get; set; }
         public string ClocExePath { get; set; }
-        public string OptionsFile { get; set; }
-        public string IgnoredFile { get; set; }
+        public string ClocOptions { get; set; }
     }
 }

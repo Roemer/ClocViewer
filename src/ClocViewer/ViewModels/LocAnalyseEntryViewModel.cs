@@ -28,7 +28,7 @@ namespace ClocViewer.ViewModels
             set => SetValue(value);
         }
 
-        public long BlankCount
+        public long CodeCount
         {
             get => GetValue<long>();
             set => SetValue(value);
@@ -40,7 +40,7 @@ namespace ClocViewer.ViewModels
             set => SetValue(value);
         }
 
-        public long CodeCount
+        public long BlankCount
         {
             get => GetValue<long>();
             set => SetValue(value);
@@ -70,9 +70,19 @@ namespace ClocViewer.ViewModels
             set => SetValue(value);
         }
 
-        public LocFolder ModelFolder { get; }
+        public FileStats ModelFile { get; }
+        public FolderStats ModelFolder { get; }
 
-        public LocAnalyseEntryViewModel(LocFolder folder, bool isRoot = false)
+        public LocAnalyseEntryViewModel(FileStats file)
+        {
+            ModelFile = file;
+            Name = file.Name;
+            FullPath = file.FullPath;
+            FileCount = file.FileCount;
+            FillFromStats(file);
+        }
+
+        public LocAnalyseEntryViewModel(FolderStats folder, bool isRoot = false)
         {
             Entries = new ObservableCollection<LocAnalyseEntryViewModel>();
             IsFolder = true;
@@ -95,8 +105,8 @@ namespace ClocViewer.ViewModels
 
             Name = folder.Name;
             FullPath = folder.FullPath;
-            FileCount = folder.TotalFilesCount;
-            FillFromStats(folder.Stats);
+            FileCount = folder.FileCount;
+            FillFromStats(folder);
         }
 
         public LocAnalyseEntryViewModel(string name)
@@ -104,19 +114,17 @@ namespace ClocViewer.ViewModels
             Name = name;
         }
 
-        public LocAnalyseEntryViewModel(LocFile file)
-        {
-            Name = file.Name;
-            FullPath = file.FullPath;
-            FillFromStats(file.Stats);
-        }
-
         private void FillFromStats(LocStats stats)
         {
+            CodeCount = stats.CodeCount;
+            CommentCount = stats.CommentCount;
+            BlankCount = stats.BlankCount;
+        }
+
+        private void FillFromStats(FileStats stats)
+        {
+            FillFromStats((LocStats)stats);
             FileType = stats.Type;
-            BlankCount = stats.Blank;
-            CommentCount = stats.Comment;
-            CodeCount = stats.Code;
             IgnoreReason = stats.IgnoreReason;
             IsIgnored = stats.IsIgnored;
         }

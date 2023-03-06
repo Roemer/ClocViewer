@@ -1,43 +1,24 @@
-﻿namespace ClocAnalyzerLibrary
+namespace ClocAnalyzerLibrary
 {
     public class LocStats
     {
         public string Type { get; set; }
-        public long Blank { get; set; }
-        public long Comment { get; set; }
-        public long Code { get; set; }
-        public bool IsIgnored { get; set; }
-        public string IgnoreReason { get; set; }
-
-        public LocStats(string type, long blank, long comment, long code)
-        {
-            Type = type;
-            Blank = blank;
-            Comment = comment;
-            Code = code;
-        }
-
-        public LocStats(string ignoreReason)
-        {
-            IsIgnored = true;
-            IgnoreReason = ignoreReason;
-        }
+        public long FileCount { get; set; }
+        public long CodeCount { get; set; }
+        public long CommentCount { get; set; }
+        public long BlankCount { get; set; }
 
         public override string ToString()
         {
-            if (IsIgnored)
-            {
-                return $"Ignored: {IgnoreReason}";
-            }
-            return $"Type: {Type}, Blank: {Blank}, Comment: {Comment}, Code: {Code}";
+            return $"Type: {Type}, Code: {CodeCount}, Comments: {CommentCount}, Blanks: {BlankCount}";
         }
 
-        public static LocStats operator +(LocStats a, LocStats b)
+        public void AddStats(LocStats otherStats)
         {
-            a.Blank += b.Blank;
-            a.Comment += b.Comment;
-            a.Code += b.Code;
-            return a;
+            FileCount += otherStats.FileCount;
+            CodeCount += otherStats.CodeCount;
+            CommentCount += otherStats.CommentCount;
+            BlankCount += otherStats.BlankCount;
         }
     }
 }

@@ -30,13 +30,7 @@ namespace ClocViewer.ViewModels
             set => SetValue(value);
         }
 
-        public string OptionsFilePath
-        {
-            get => GetValue<string>();
-            set => SetValue(value);
-        }
-
-        public string IgnoredFilePath
+        public string ClocOptionsText
         {
             get => GetValue<string>();
             set => SetValue(value);
@@ -72,6 +66,9 @@ namespace ClocViewer.ViewModels
         public ICommand MenuSaveCommand { get; }
         public ICommand MenuExitCommand { get; }
 
+        public ICommand MenuOpenResult { get; }
+        public ICommand MenuSaveResult { get; }
+
         public ICommand SourceBrowseCommand { get; }
         public ICommand ClocBrowseCommand { get; }
         public ICommand OptionsFileBrowseCommand { get; }
@@ -80,7 +77,8 @@ namespace ClocViewer.ViewModels
         public ICommand AnalyzeCommand { get; }
         public ICommand MouseDoubleClickCommand { get; }
         public ICommand SelectionChangedCommand { get; }
-        public ICommand CopyCommand { get; }
+        public ICommand CopyPathStatsCommand { get; }
+        public ICommand CopyLanguageStatsCommand { get; }
 
         public LocAnalyseViewModel()
         {
@@ -97,29 +95,25 @@ namespace ClocViewer.ViewModels
                 {
                     // Reset
                     SourcePath = string.Empty;
-                    OptionsFilePath = string.Empty;
-                    IgnoredFilePath = string.Empty;
+                    ClocOptionsText = string.Empty;
                     // Read and load the settings
                     var fileContent = File.ReadAllLines(openFileDialog.FileName);
-                    foreach (var line in fileContent)
+                    var lastConfigLine = -1;
+                    for (int i = 0; i < fileContent.Length; i++)
                     {
-                        if (line.StartsWith("SourcePath"))
+                        string line = fileContent[i];
+                        if (line.StartsWith("#SourcePath"))
                         {
                             SourcePath = line.Substring(line.IndexOf('=') + 1);
+                            lastConfigLine = i;
                         }
-                        else if (line.StartsWith("OptionsFilePath"))
-                        {
-                            OptionsFilePath = line.Substring(line.IndexOf('=') + 1);
-                        }
-                        else if (line.StartsWith("IgnoredFilePath"))
-                        {
-                            IgnoredFilePath = line.Substring(line.IndexOf('=') + 1);
-                        }
-                        else if (line.StartsWith("ClocPath"))
+                        else if (line.StartsWith("#ClocPath"))
                         {
                             ClocPath = line.Substring(line.IndexOf('=') + 1);
+                            lastConfigLine = i;
                         }
                     }
+                    ClocOptionsText = string.Join(Environment.NewLine, fileContent[(lastConfigLine + 1)..]);
                 }
             });
 
@@ -133,12 +127,21 @@ namespace ClocViewer.ViewModels
                 if (saveFileDialog.ShowDialog() == true)
                 {
                     var fileContent = new StringBuilder();
-                    fileContent.AppendLine($"SourcePath={SourcePath}");
-                    fileContent.AppendLine($"OptionsFilePath={OptionsFilePath}");
-                    fileContent.AppendLine($"IgnoredFilePath={IgnoredFilePath}");
-                    fileContent.AppendLine($"ClocPath={ClocPath}");
+                    fileContent.AppendLine($"#SourcePath={SourcePath}");
+                    fileContent.AppendLine($"#ClocPath={ClocPath}");
+                    fileContent.Append($"{ClocOptionsText}");
                     File.WriteAllText(saveFileDialog.FileName, fileContent.ToString());
                 }
+            });
+
+            MenuSaveResult = new RelayCommand(o =>
+            {
+                // TODO
+            });
+
+            MenuOpenResult = new RelayCommand(o =>
+            {
+                // TODO
             });
 
             MenuExitCommand = new RelayCommand(o =>
@@ -148,7 +151,18 @@ namespace ClocViewer.ViewModels
 
             SourceBrowseCommand = new RelayCommand(o =>
             {
-                FolderBrowser.BrowseForFolder("source", (s) => SourcePath = s);
+                using var dialog = new System.Windows.Forms.FolderBrowserDialog
+                {
+                    Description = $"Select a source folder",
+                    UseDescriptionForTitle = true,
+                    SelectedPath = SourcePath,
+                    ShowNewFolderButton = true
+                };
+
+                if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
+                    SourcePath = dialog.SelectedPath;
+                }
             });
 
             ClocBrowseCommand = new RelayCommand(o =>
@@ -164,46 +178,26 @@ namespace ClocViewer.ViewModels
                 }
             });
 
-            OptionsFileBrowseCommand = new RelayCommand(o =>
-            {
-                var openFileDialog = new OpenFileDialog
-                {
-                    Title = "Select the options file",
-                    Filter = "Text (*.txt)|*.txt|All files (*.*)|*.*"
-                };
-                if (openFileDialog.ShowDialog() == true)
-                {
-                    OptionsFilePath = openFileDialog.FileName;
-                }
-            });
-
-            IgnoredFileBrowseCommand = new RelayCommand(o =>
-            {
-                var openFileDialog = new OpenFileDialog
-                {
-                    Title = "Select the ignored file",
-                    Filter = "Text (*.txt)|*.txt|All files (*.*)|*.*"
-                };
-                if (openFileDialog.ShowDialog() == true)
-                {
-                    IgnoredFilePath = openFileDialog.FileName;
-                }
-            });
-
             AnalyzeCommand = new RelayCommand(o =>
             {
                 var src = SourcePath;
-                var rootFolder = LocAnalyzer.Analyze(new LocAnalyzerSettings
+                try
                 {
-                    RootPath = src,
-                    ClocExePath = ClocPath,
-                    IgnoredFile = IgnoredFilePath,
-                    OptionsFile = OptionsFilePath
-                });
-                Root = new LocAnalyseEntryViewModel(rootFolder, true);
-                DisplayedEntry = Root;
-                CurrentPath = rootFolder.FullPath;
-                SelectionText = "";
+                    var rootFolder = LocAnalyzer.Analyze(new LocAnalyzerSettings
+                    {
+                        RootPath = src,
+                        ClocExePath = ClocPath,
+                        ClocOptions = ClocOptionsText,
+                    });
+                    Root = new LocAnalyseEntryViewModel(rootFolder, true);
+                    DisplayedEntry = Root;
+                    CurrentPath = rootFolder.FullPath;
+                    SelectionText = "";
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Failed to get data: " + ex.Message);
+                }
             });
 
             MouseDoubleClickCommand = new RelayCommand(o =>
@@ -238,43 +232,65 @@ namespace ClocViewer.ViewModels
                 long codeCount = 0;
                 long commentCount = 0;
                 long blankCount = 0;
-                var languageDictCount = new Dictionary<string, long>();
+                long fileCount = 0;
+                var languageDict = new Dictionary<string, LocStats>();
                 foreach (var item in collection)
                 {
+                    // Total counts
                     codeCount += item.CodeCount;
                     commentCount += item.CommentCount;
                     blankCount += item.BlankCount;
+                    fileCount += item.FileCount;
+
+                    // Language statistics
                     if (item.IsFolder)
                     {
+                        // Skip special folders like ".."
                         if (item.ModelFolder == null) continue;
-                        foreach (var (key, value) in item.ModelFolder.LanguageCount)
+                        // Add all languages
+                        foreach (var (key, value) in item.ModelFolder.Languages)
                         {
-                            languageDictCount.IncrementBy(key, value);
+                            ExtensionMethods.AddStatsToDict(languageDict, value);
                         }
                     }
                     else
                     {
-                        if (item.IsIgnored) continue;
-                        languageDictCount.IncrementBy(item.FileType, item.CodeCount);
+                        // Add a single file
+                        ExtensionMethods.AddStatsToDict(languageDict, item.ModelFile);
                     }
                 }
-                SelectionText = $"Code: {codeCount:n0}, Comment: {commentCount:n0}, Blank: {blankCount:n0}";
+                // Taskbar Text for total counts
+                SelectionText = $"Files: {fileCount:n0}, Code: {codeCount:n0}, Comment: {commentCount:n0}, Blank: {blankCount:n0}";
+                // Update Language statistics
                 SelectedLanguages.Clear();
-                foreach (var keyValuePair in languageDictCount)
+                foreach (var (key, value) in languageDict)
                 {
-                    SelectedLanguages.Add(new LanguageEntryViewModel { Language = keyValuePair.Key, LineCount = keyValuePair.Value });
+                    SelectedLanguages.Add(new LanguageEntryViewModel(value));
                 }
             });
 
-            CopyCommand = new RelayCommand(o =>
+            CopyPathStatsCommand = new RelayCommand(o =>
             {
                 IList items = (IList)o;
                 var collection = items.Cast<LocAnalyseEntryViewModel>();
                 var sb = new StringBuilder();
-                sb.AppendLine("Name;Code;Comment;Blanks");
+                sb.AppendLine("Name;Files;Code;Comment;Blanks");
                 foreach (var item in collection.OrderBy(x => !x.IsFolder).ThenBy(x => x.IsIgnored).ThenBy(x => x.Name))
                 {
-                    sb.AppendLine($"{item.Name};{item.CodeCount};{item.CommentCount};{item.BlankCount}");
+                    sb.AppendLine($"{item.Name};{item.FileCount};{item.CodeCount};{item.CommentCount};{item.BlankCount}");
+                }
+                Clipboard.SetText(sb.ToString());
+            });
+
+            CopyLanguageStatsCommand = new RelayCommand(o =>
+            {
+                IList items = (IList)o;
+                var collection = items.Cast<LanguageEntryViewModel>();
+                var sb = new StringBuilder();
+                sb.AppendLine("Language;Files;Code;Comment;Blanks");
+                foreach (var item in collection.OrderByDescending(x => x.CodeCount).ThenByDescending(x => x.FileCount))
+                {
+                    sb.AppendLine($"{item.Language};{item.FileCount};{item.CodeCount};{item.CommentCount};{item.BlankCount}");
                 }
                 Clipboard.SetText(sb.ToString());
             });
