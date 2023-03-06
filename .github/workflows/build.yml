@@ -22,7 +22,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: 7.0.x
     - name: Restore dependencies
       run: dotnet restore ${{ env.SLNPATH }}
     - name: Build
@@ -33,7 +33,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: ClocViewer-${{github.sha}}
-        path: ./src/ClocViewer/bin/Debug/net5.0-windows/publish
+        path: ./src/ClocViewer/bin/Debug/net7.0-windows/publish
         retention-days: 90
   release:
     needs: build
