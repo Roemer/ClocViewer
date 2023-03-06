@@ -256,6 +256,7 @@ namespace ClocViewer.ViewModels
                     else
                     {
                         // Add a single file
+                        if (item.IsIgnored) continue;
                         ExtensionMethods.AddStatsToDict(languageDict, item.ModelFile);
                     }
                 }

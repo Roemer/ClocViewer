@@ -39,7 +39,10 @@ namespace ClocAnalyzerLibrary
             // Add the stats to the current folder
             this.AddStats(fileStats);
             // Language stats
-            ExtensionMethods.AddStatsToDict(Languages, fileStats);
+            if (!fileStats.IsIgnored)
+            {
+                ExtensionMethods.AddStatsToDict(Languages, fileStats);
+            }
         }
 
         internal FolderStats GetOrCreateFolder(string folderPath)

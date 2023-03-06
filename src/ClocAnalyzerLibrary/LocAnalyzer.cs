@@ -82,7 +82,7 @@ namespace ClocAnalyzerLibrary
                         // Empty entry
                         continue;
                     }
-                    var linePrepared = Regex.Replace(line.Replace("/", "\\"), Regex.Escape(settings.RootPath), "", RegexOptions.IgnoreCase);
+                    var linePrepared = line.Replace("/", "\\");
                     var parts = linePrepared.Split(',', 2);
                     var filePath = parts[0].Trim('\\', '/');
                     if (string.IsNullOrWhiteSpace(filePath))
