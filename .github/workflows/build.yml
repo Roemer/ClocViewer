@@ -18,9 +18,9 @@ jobs:
       SLNPATH: ./src/ClocViewer.sln
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v7
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v6
       with:
         dotnet-version: 7.0.x
     - name: Restore dependencies
@@ -30,7 +30,7 @@ jobs:
     - name: Publish
       run: dotnet publish  ${{ env.SLNPATH }}
     - name: Upload artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v7
       with:
         name: ClocViewer-${{github.sha}}
         path: ./src/ClocViewer/bin/Debug/net7.0-windows/publish
@@ -44,11 +44,11 @@ jobs:
       run: |
         echo "Creating release"
     - name: Download Artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v8
       with:
         path: ./artifacts
     - name: Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v3
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
